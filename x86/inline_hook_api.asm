@@ -33,7 +33,7 @@ inline_hook:
 	inc esi                ; Increase pointer 1 byte
 	mov dword [esi],eax    ; PUSH EAX
 	add esi,0x04           ; Increase pointer by 4
-	mov dword [esi],0xC3   ; POP EAX, JMP EAX
+	mov dword [esi],0xC3   ; PUSH 0x..., RET
 	push ebx               ; Push back the return address
 	ret                    ; Return to caller
 api_call:
