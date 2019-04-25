@@ -24,16 +24,29 @@ inline_hook:
     push dword 0x00        ; OldProtect
 	push esp               ; lpflOldProtect
 	push dword 0x40        ; flNewProtect (PAGE_EXECUTE_READWRITE)
-	push dword 0x06        ; dwSize
+	push dword patch_size  ; dwSize
 	push esi               ; lpAddress
 	call eax               ; VirtualProtect(lpAddress,5,PAGE_EXECUTE_READWRITE,&OldProtect)
 	pop eax                ; Clear stack
-	pop eax                ; Pop the redirection address to EAX	
-	mov dword [esi],0x68   ; 0x68 = PUSH
-	inc esi                ; Increase pointer 1 byte
-	mov dword [esi],eax    ; PUSH EAX
-	add esi,0x04           ; Increase pointer by 4
-	mov dword [esi],0xC3   ; PUSH 0x..., RET
+	call patch_end
+patch_start:
+	incbin "patch"
+patch_end:
+patch_size: equ $-patch_start
+	pop edx
+	mov ecx,patch_size
+write:
+	mov al,byte [edx]
+	mov byte [esi],al
+	inc edx
+	inc esi
+	loop write
+	;pop eax                ; Pop the redirection address to EAX	
+	;mov dword [esi],0x68   ; 0x68 = PUSH
+	;inc esi                ; Increase pointer 1 byte
+	;mov dword [esi],eax    ; PUSH EAX
+	;add esi,0x04           ; Increase pointer by 4
+	;mov dword [esi],0xC3   ; PUSH 0x..., RET
 	push ebx               ; Push back the return address
 	ret                    ; Return to caller
 api_call:

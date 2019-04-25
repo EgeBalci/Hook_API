@@ -29,16 +29,23 @@ inline_hook:
 	push qword 0x00        ; OldProtect
 	mov r9,rsp             ; lpflOldProtect
 	mov r8,0x40            ; flNewProtect (PAGE_EXECUTE_READWRITE)
-	mov rdx,0x0F           ; dwSize 
+	mov rdx,patch_size     ; dwSize 
 	mov rcx,rsi            ; lpAddress
 	call rax               ; VirtualProtect(lpAddress,12,PAGE_EXECUTE_READWRITE,&OldProtect)
 	pop rax                ; Clean stack
-	pop rax                ; Pop out the redirection address
-	mov qword [rsi],0xb848 ; movabs rax
-	add rsi,0x02           ; Move pointer 2 bytes
-	mov qword [rsi],rax    ; movabs rax,0x...
-	add rsi,0x08           ; Move pointer 8 bytes
-	mov qword [rsi],0xC350 ; push rax & ret   
+	call patch_end
+patch_start:
+	incbin "patch"         ; Patch code for the hooked API 
+patch_end: 
+patch_size: equ $-patch_start:
+	pop rdx	               ; Pop out the address of patch code	
+	mov rcx,patch_size     ; Move the size of the patch to RCX
+write:
+	mov al,byte [rdx]      ; Get one byte from patch code
+	mov byte [rsi],al      ; Move one byte to hooked function
+	inc rsi
+	inc rdx
+	loop write
 	push rbx               ; Push back the return address
 	ret                    ; Return to caller
 api_call:
